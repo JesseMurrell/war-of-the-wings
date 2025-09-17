@@ -63,12 +63,22 @@ class WingChallenge {
         addBtn.textContent = 'Adding...';
         addBtn.disabled = true;
         
+        // Debug logging
+        console.log('🔍 DEBUG: Adding player debug info:');
+        console.log('- Player name:', name);
+        console.log('- Is online:', this.isOnline);
+        console.log('- CONFIG.WEB_APP_URL:', CONFIG.WEB_APP_URL);
+        console.log('- URL check passed:', CONFIG.WEB_APP_URL !== 'YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE');
+        
         try {
             if (this.isOnline && CONFIG.WEB_APP_URL && CONFIG.WEB_APP_URL !== 'YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE') {
+                console.log('✅ Attempting to add player via Google Sheets API...');
                 // Add to Google Sheets
                 const result = await this.apiCall('addPlayer', { name });
+                console.log('📡 API call result:', result);
                 
                 if (result.success) {
+                    console.log('✅ Player added successfully via API');
                     this.players.push({
                         id: result.player.id,
                         name: result.player.name,
@@ -82,9 +92,14 @@ class WingChallenge {
                     this.saveToStorage();
                     this.showNotification(`${name} added to the challenge!`, 'success');
                 } else {
+                    console.log('❌ API call failed:', result.error);
                     throw new Error(result.error || 'Failed to add player');
                 }
             } else {
+                console.log('⚠️ Using fallback mode because:');
+                console.log('- Is online:', this.isOnline);
+                console.log('- Has WEB_APP_URL:', !!CONFIG.WEB_APP_URL);
+                console.log('- URL is configured:', CONFIG.WEB_APP_URL !== 'YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE');
                 // Fallback to local storage
                 const player = {
                     id: Date.now(),
@@ -103,7 +118,8 @@ class WingChallenge {
                 this.showNotification(`${name} added locally!`, 'success');
             }
         } catch (error) {
-            console.error('Error adding player:', error);
+            console.error('❌ Error adding player:', error);
+            console.error('Error details:', error.message);
             this.showNotification('Error adding player. Try again.', 'error');
         } finally {
             addBtn.textContent = originalText;
@@ -600,26 +616,45 @@ class WingChallenge {
     }
     
     async apiCall(action, data = {}) {
+        console.log('🌐 API Call Debug:');
+        console.log('- Action:', action);
+        console.log('- Data:', data);
+        console.log('- URL:', CONFIG.WEB_APP_URL);
+        
         if (!CONFIG.WEB_APP_URL || CONFIG.WEB_APP_URL === 'YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE') {
+            console.error('❌ Google Apps Script URL not configured');
             throw new Error('Google Apps Script URL not configured');
         }
         
         const payload = { action, ...data };
+        console.log('📤 Sending payload:', payload);
         
-        const response = await fetch(CONFIG.WEB_APP_URL, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(payload),
-            mode: 'cors'
-        });
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+        try {
+            const response = await fetch(CONFIG.WEB_APP_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(payload),
+                mode: 'cors'
+            });
+            
+            console.log('📥 Response status:', response.status);
+            console.log('📥 Response ok:', response.ok);
+            
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('❌ HTTP Error Response:', errorText);
+                throw new Error(`HTTP error! status: ${response.status}, body: ${errorText}`);
+            }
+            
+            const result = await response.json();
+            console.log('📥 Response data:', result);
+            return result;
+        } catch (fetchError) {
+            console.error('❌ Fetch error:', fetchError);
+            throw fetchError;
         }
-        
-        return await response.json();
     }
     
     // Update the existing methods to use API calls
