@@ -629,8 +629,18 @@ class WingChallenge {
         const payload = { action, ...data };
         console.log('📤 Sending payload:', payload);
         
+        // Check if we're on localhost (CORS will fail)
+        const isLocalhost = window.location.hostname === 'localhost' || 
+                           window.location.hostname === '127.0.0.1' ||
+                           window.location.protocol === 'file:';
+        
+        if (isLocalhost) {
+            console.log('🏠 Localhost detected - using JSONP fallback');
+            return this.jsonpCall(action, data);
+        }
+        
         try {
-            // Try GET request first for testing
+            // Try GET request for HTTPS domains
             const url = new URL(CONFIG.WEB_APP_URL);
             url.searchParams.append('action', action);
             Object.keys(data).forEach(key => {
@@ -660,6 +670,57 @@ class WingChallenge {
             console.error('❌ Fetch error:', fetchError);
             throw fetchError;
         }
+    }
+    
+    // JSONP fallback for localhost testing
+    jsonpCall(action, data) {
+        return new Promise((resolve, reject) => {
+            console.log('📞 Using JSONP for localhost');
+            
+            // Create callback function name
+            const callbackName = 'jsonp_callback_' + Date.now();
+            
+            // Create URL with callback parameter
+            const url = new URL(CONFIG.WEB_APP_URL);
+            url.searchParams.append('action', action);
+            url.searchParams.append('callback', callbackName);
+            Object.keys(data).forEach(key => {
+                url.searchParams.append(key, data[key]);
+            });
+            
+            console.log('📞 JSONP URL:', url.toString());
+            
+            // Set up global callback
+            window[callbackName] = function(result) {
+                console.log('📞 JSONP Response:', result);
+                delete window[callbackName];
+                document.head.removeChild(script);
+                resolve(result);
+            };
+            
+            // Create script tag
+            const script = document.createElement('script');
+            script.src = url.toString();
+            script.onerror = function() {
+                console.error('❌ JSONP Error');
+                delete window[callbackName];
+                document.head.removeChild(script);
+                reject(new Error('JSONP request failed'));
+            };
+            
+            // Add to page
+            document.head.appendChild(script);
+            
+            // Timeout after 10 seconds
+            setTimeout(() => {
+                if (window[callbackName]) {
+                    console.error('❌ JSONP Timeout');
+                    delete window[callbackName];
+                    document.head.removeChild(script);
+                    reject(new Error('JSONP request timeout'));
+                }
+            }, 10000);
+        });
     }
     
     // Update the existing methods to use API calls
