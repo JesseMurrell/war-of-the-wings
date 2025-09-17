@@ -1,5 +1,6 @@
 // Google Sheets API Configuration
 // Instructions for setup are in README.md
+// Updated with working Google Apps Script URL - Version 3
 
 const CONFIG = {
     // Replace with your Google Sheets ID (from the URL)
