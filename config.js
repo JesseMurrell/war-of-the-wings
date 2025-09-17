@@ -6,7 +6,7 @@ const CONFIG = {
     SHEET_ID: '127yfrhvvy2nck6MFvhmv1MiD4mfVnWvt8hO6slhao4M',
     
     // Replace with your Google Apps Script Web App URL
-    WEB_APP_URL: 'https://script.google.com/macros/s/AKfycbzw_QdGe6QVFFPfLwkATptGvvPKvqjczyvegSWSHfJYzvFwKckRnWZjX5JaaZZM_pEs/exec',
+    WEB_APP_URL: 'https://script.google.com/macros/s/AKfycbyKLMxobUPK0g6p8xRRbccZC5vRj5N62lNH4H-zr5S5MkVCoGADn1bS9RmUuEXQBC39/exec',
     
     // Sheet name/tab (default is 'Sheet1')
     SHEET_NAME: 'Players',
