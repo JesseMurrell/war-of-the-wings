@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>War of the Wings</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <!-- Header Section -->
+        <header class="header">
+            <div class="logo-section">
+                <div class="logo">∫ Δ / +</div>
+            </div>
+            
+            <div class="hero-section">
+                <h1 class="hero-title">
+                    The flexible, accurate,<br>
+                    high-speed and<br>
+                    transparent wing eating<br>
+                    challenge scoreboard, in<br>
+                    tune with the office era.
+                </h1>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Leader Section -->
+            <section class="leader-section">
+                <div class="leader-card" id="leaderCard">
+                    <div class="leader-content">
+                        <h2 class="section-title">Wing eating is one of the purest forms of competition. War of the Wings makes sure it's fairly scored.</h2>
+                        
+                        <div class="leader-display" id="leaderDisplay">
+                            <div class="leader-text">Add players to start the challenge</div>
+                        </div>
+                    </div>
+                    
+                    <div class="leader-stats">
+                        <p>We streamline wing counting & scoring from challenge to leaderboard, with a global network that's flexible, accurate, high-speed and transparent. Teams can quickly and accurately track progress. And winners get credited wherever they're celebrated.</p>
+                        
+                        <p class="stats-subtitle">A scoring system built for the future. To set the record straight for the wing eating industry.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Controls Section -->
+            <section class="controls-section">
+                <div class="add-player-card">
+                    <h3>War of the Wings Adds Next-Generation Player Management</h3>
+                    <p>War of the Wings' new player capability unlocks one of the most critical features for wing eating competitions in the digital era</p>
+                    
+                    <div class="add-player-form">
+                        <input type="text" id="playerNameInput" placeholder="Enter player name" maxlength="25">
+                        <button id="addPlayerBtn" class="primary-btn">Add Player</button>
+                    </div>
+                </div>
+
+                <div class="game-controls-card">
+                    <h3>War of the Wings Signs Massive Game Control as First Strategic Partner in Competition</h3>
+                    <p>"This collaboration is a testament to War of the Wings' innovative approach to wing eating competition management."</p>
+                    
+                    <div class="control-buttons">
+                        <button id="resetScoresBtn" class="control-btn">Reset Scores</button>
+                        <button id="undoBtn" class="control-btn">Undo Last Action</button>
+                        <button id="exportBtn" class="control-btn">Export Results</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Scoreboard Grid -->
+            <section class="scoreboard-section">
+                <div class="scoreboard-grid" id="scoreboardGrid">
+                    <!-- Player cards will be dynamically generated here -->
+                </div>
+            </section>
+
+            <!-- Stats Section -->
+            <section class="stats-section">
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-number" id="totalPlayers">0</div>
+                        <div class="stat-label">Active Players</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number" id="totalWings">0</div>
+                        <div class="stat-label">Total Wings Consumed</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number" id="averageWings">0.0</div>
+                        <div class="stat-label">Average per Player</div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Timer Section -->
+        <div class="timer-section">
+            <div class="timer-display" id="timerDisplay">00:00</div>
+            <div class="timer-controls">
+                <button id="startTimer" class="timer-btn">Start</button>
+                <button id="pauseTimer" class="timer-btn">Pause</button>
+                <button id="resetTimer" class="timer-btn">Reset</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confetti Canvas for celebrations -->
+    <canvas id="confettiCanvas"></canvas>
+
+    <script src="config.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
