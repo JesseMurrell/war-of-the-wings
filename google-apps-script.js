@@ -11,13 +11,36 @@ function doPost(e) {
 }
 
 function doGet(e) {
+  // If no action specified, return a simple test response
+  if (!e.parameter.action && (!e.postData || !e.postData.contents)) {
+    return ContentService
+      .createTextOutput(JSON.stringify({ 
+        success: true, 
+        message: 'Google Apps Script is working!',
+        timestamp: new Date().toISOString()
+      }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
   return handleRequest(e);
 }
 
 function handleRequest(e) {
   try {
     const sheet = getOrCreateSheet();
-    const action = e.parameter.action || e.postData?.contents ? JSON.parse(e.postData.contents).action : '';
+    
+    // Handle both GET and POST requests
+    let action, data;
+    
+    if (e.postData && e.postData.contents) {
+      // POST request
+      const postData = JSON.parse(e.postData.contents);
+      action = postData.action;
+      data = postData;
+    } else {
+      // GET request
+      action = e.parameter.action;
+      data = e.parameter;
+    }
     
     let response;
     
@@ -26,54 +49,36 @@ function handleRequest(e) {
         response = getPlayers(sheet);
         break;
       case 'addPlayer':
-        const playerData = JSON.parse(e.postData.contents);
-        response = addPlayer(sheet, playerData.name);
+        response = addPlayer(sheet, data.name);
         break;
       case 'updateScore':
-        const scoreData = JSON.parse(e.postData.contents);
-        response = updateScore(sheet, scoreData.id, scoreData.score);
+        response = updateScore(sheet, data.id, data.score);
         break;
       case 'removePlayer':
-        const removeData = JSON.parse(e.postData.contents);
-        response = removePlayer(sheet, removeData.id);
+        response = removePlayer(sheet, data.id);
         break;
       case 'resetScores':
         response = resetScores(sheet);
         break;
       default:
-        response = { error: 'Invalid action' };
+        response = { error: 'Invalid action: ' + action };
     }
     
     return ContentService
       .createTextOutput(JSON.stringify(response))
-      .setMimeType(ContentService.MimeType.JSON)
-      .setHeaders({
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type'
-      });
+      .setMimeType(ContentService.MimeType.JSON);
       
   } catch (error) {
     return ContentService
       .createTextOutput(JSON.stringify({ error: error.toString() }))
-      .setMimeType(ContentService.MimeType.JSON)
-      .setHeaders({
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type'
-      });
+      .setMimeType(ContentService.MimeType.JSON);
   }
 }
 
 // Handle CORS preflight requests
 function doOptions(e) {
   return ContentService
-    .createTextOutput('')
-    .setHeaders({
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type'
-    });
+    .createTextOutput('');
 }
 
 // Get or create the players sheet

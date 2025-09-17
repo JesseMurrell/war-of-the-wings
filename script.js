@@ -630,12 +630,17 @@ class WingChallenge {
         console.log('📤 Sending payload:', payload);
         
         try {
-            const response = await fetch(CONFIG.WEB_APP_URL, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(payload),
+            // Try GET request first for testing
+            const url = new URL(CONFIG.WEB_APP_URL);
+            url.searchParams.append('action', action);
+            Object.keys(data).forEach(key => {
+                url.searchParams.append(key, data[key]);
+            });
+            
+            console.log('🔗 GET URL:', url.toString());
+            
+            const response = await fetch(url.toString(), {
+                method: 'GET',
                 mode: 'cors'
             });
             
