@@ -295,7 +295,7 @@ class WingChallenge {
             <div class="player-card ${player.isLeader ? 'leader' : ''}" data-player-id="${player.id}">
                 <div class="player-header">
                     <div class="player-name">${player.name}</div>
-                    <button class="remove-btn" onclick="wingChallenge.removePlayer(${player.id})" title="Remove player">×</button>
+                    <button class="remove-btn" onclick="wingChallenge.removePlayer(${player.id})" title="Delete ${player.name} from challenge" aria-label="Delete ${player.name}">×</button>
                 </div>
                 
                 <div class="player-score">${player.score}</div>
@@ -786,6 +786,11 @@ class WingChallenge {
         if (playerIndex === -1) return;
         
         const removedPlayer = this.players[playerIndex];
+        
+        // Show confirmation dialog with player's name
+        if (!confirm(`Are you sure you want to delete ${removedPlayer.name} from the challenge? This action cannot be undone.`)) {
+            return;
+        }
         
         try {
             if (this.isOnline && CONFIG.WEB_APP_URL && CONFIG.WEB_APP_URL !== 'YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE') {

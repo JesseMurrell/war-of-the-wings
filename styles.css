@@ -255,14 +255,28 @@ body {
     border: none;
     font-size: 18px;
     cursor: pointer;
-    padding: 4px;
+    padding: 6px;
     opacity: 0.6;
-    transition: opacity 0.2s;
-    color: inherit;
+    transition: all 0.2s ease;
+    color: var(--text-gray);
+    border-radius: 4px;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
 }
 
 .remove-btn:hover {
     opacity: 1;
+    background-color: var(--error-red);
+    color: var(--primary-white);
+    transform: scale(1.1);
+}
+
+.remove-btn:active {
+    transform: scale(0.95);
 }
 
 .player-score {
