@@ -629,13 +629,16 @@ class WingChallenge {
         const payload = { action, ...data };
         console.log('📤 Sending payload:', payload);
         
-        // Check if we're on localhost (CORS will fail)
+        // Check if we need JSONP (CORS will fail for Google Apps Script)
         const isLocalhost = window.location.hostname === 'localhost' || 
                            window.location.hostname === '127.0.0.1' ||
                            window.location.protocol === 'file:';
         
-        if (isLocalhost) {
-            console.log('🏠 Localhost detected - using JSONP fallback');
+        const isGitHubPages = window.location.hostname.includes('github.io');
+        
+        // Use JSONP for localhost and GitHub Pages (Google Apps Script doesn't support CORS properly)
+        if (isLocalhost || isGitHubPages) {
+            console.log('🌐 Using JSONP fallback for cross-origin request');
             return this.jsonpCall(action, data);
         }
         

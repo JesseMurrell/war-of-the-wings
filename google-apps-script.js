@@ -7,44 +7,72 @@ const SHEET_NAME = 'Players';
 
 // Main function to handle HTTP requests
 function doPost(e) {
+  // Ensure e exists
+  if (!e) {
+    e = { parameter: {}, postData: null };
+  }
   return handleRequest(e);
 }
 
 function doGet(e) {
+  // Ensure e and e.parameter exist
+  if (!e) {
+    e = { parameter: {} };
+  }
+  if (!e.parameter) {
+    e.parameter = {};
+  }
+  
+  // Handle JSONP callback if present
+  const callback = e.parameter.callback;
+  
   // If no action specified, return a simple test response
   if (!e.parameter.action && (!e.postData || !e.postData.contents)) {
-    return ContentService
-      .createTextOutput(JSON.stringify({ 
-        success: true, 
-        message: 'Google Apps Script is working!',
-        timestamp: new Date().toISOString()
-      }))
-      .setMimeType(ContentService.MimeType.JSON)
-      .setHeaders({
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization'
-      });
+    const response = JSON.stringify({ 
+      success: true, 
+      message: 'Google Apps Script is working!',
+      timestamp: new Date().toISOString()
+    });
+    
+    if (callback) {
+      return ContentService
+        .createTextOutput(callback + '(' + response + ')')
+        .setMimeType(ContentService.MimeType.JAVASCRIPT);
+    } else {
+      return ContentService
+        .createTextOutput(response)
+        .setMimeType(ContentService.MimeType.JSON);
+    }
   }
   return handleRequest(e);
 }
 
 function handleRequest(e) {
   try {
+    // Ensure e exists and has proper structure
+    if (!e) {
+      e = { parameter: {}, postData: null };
+    }
+    if (!e.parameter) {
+      e.parameter = {};
+    }
+    
     const sheet = getOrCreateSheet();
     
     // Handle both GET and POST requests
-    let action, data;
+    let action, data, callback;
     
     if (e.postData && e.postData.contents) {
       // POST request
       const postData = JSON.parse(e.postData.contents);
       action = postData.action;
       data = postData;
+      callback = null; // POST requests don't use JSONP
     } else {
       // GET request
       action = e.parameter.action;
       data = e.parameter;
+      callback = e.parameter.callback;
     }
     
     let response;
@@ -69,24 +97,32 @@ function handleRequest(e) {
         response = { error: 'Invalid action: ' + action };
     }
     
-    return ContentService
-      .createTextOutput(JSON.stringify(response))
-      .setMimeType(ContentService.MimeType.JSON)
-      .setHeaders({
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization'
-      });
+    const responseText = JSON.stringify(response);
+    
+    // Handle JSONP callback if present
+    if (callback) {
+      return ContentService
+        .createTextOutput(callback + '(' + responseText + ')')
+        .setMimeType(ContentService.MimeType.JAVASCRIPT);
+    } else {
+      return ContentService
+        .createTextOutput(responseText)
+        .setMimeType(ContentService.MimeType.JSON);
+    }
       
   } catch (error) {
-    return ContentService
-      .createTextOutput(JSON.stringify({ error: error.toString() }))
-      .setMimeType(ContentService.MimeType.JSON)
-      .setHeaders({
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization'
-      });
+    const errorResponse = JSON.stringify({ error: error.toString() });
+    const callback = (e && e.parameter && e.parameter.callback) ? e.parameter.callback : null;
+    
+    if (callback) {
+      return ContentService
+        .createTextOutput(callback + '(' + errorResponse + ')')
+        .setMimeType(ContentService.MimeType.JAVASCRIPT);
+    } else {
+      return ContentService
+        .createTextOutput(errorResponse)
+        .setMimeType(ContentService.MimeType.JSON);
+    }
   }
 }
 
@@ -94,13 +130,7 @@ function handleRequest(e) {
 function doOptions(e) {
   return ContentService
     .createTextOutput('')
-    .setMimeType(ContentService.MimeType.TEXT)
-    .setHeaders({
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-      'Access-Control-Max-Age': '86400'
-    });
+    .setMimeType(ContentService.MimeType.TEXT);
 }
 
 // Get or create the players sheet
@@ -238,4 +268,23 @@ function testAPI() {
   // Test getting players
   const players = getPlayers(sheet);
   console.log('Get players result:', players);
+}
+
+// Simple test function to verify the script works
+function simpleTest() {
+  try {
+    // Test doGet with minimal parameters
+    const testEvent = {
+      parameter: {
+        action: 'getPlayers'
+      }
+    };
+    
+    const result = doGet(testEvent);
+    console.log('doGet test successful');
+    return 'Script is working correctly!';
+  } catch (error) {
+    console.error('Error in simpleTest:', error);
+    return 'Error: ' + error.toString();
+  }
 }
