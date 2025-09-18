@@ -36,20 +36,30 @@ class WingChallenge {
         
         if (isGitHubPages || isLocalhost) {
             const testBtn = document.createElement('button');
-            testBtn.textContent = 'Test Connection';
+            testBtn.innerHTML = '⚡'; // Lightning bolt icon for connection test
+            testBtn.title = 'Test Connection';
             testBtn.style.cssText = `
                 position: fixed;
                 top: 10px;
                 right: 10px;
                 z-index: 1000;
-                background: #007bff;
-                color: white;
-                border: none;
-                padding: 8px 16px;
-                border-radius: 4px;
+                background: transparent;
+                color: #333;
+                border: 1px solid #ddd;
+                padding: 4px 6px;
+                border-radius: 3px;
                 cursor: pointer;
-                font-size: 12px;
+                font-size: 14px;
+                opacity: 0.7;
+                transition: opacity 0.2s ease;
+                width: 24px;
+                height: 24px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
             `;
+            testBtn.onmouseover = () => testBtn.style.opacity = '1';
+            testBtn.onmouseout = () => testBtn.style.opacity = '0.7';
             testBtn.onclick = () => this.testConnection();
             document.body.appendChild(testBtn);
         }
