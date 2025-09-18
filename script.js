@@ -23,6 +23,56 @@ class WingChallenge {
         this.updateDisplay();
         this.setupConfetti();
         this.startSync();
+        
+        // Add test connection button for debugging
+        this.addTestButton();
+    }
+    
+    addTestButton() {
+        // Only add test button in development (GitHub Pages or localhost)
+        const isGitHubPages = window.location.hostname.includes('github.io');
+        const isLocalhost = window.location.hostname === 'localhost' || 
+                           window.location.hostname === '127.0.0.1';
+        
+        if (isGitHubPages || isLocalhost) {
+            const testBtn = document.createElement('button');
+            testBtn.textContent = 'Test Connection';
+            testBtn.style.cssText = `
+                position: fixed;
+                top: 10px;
+                right: 10px;
+                z-index: 1000;
+                background: #007bff;
+                color: white;
+                border: none;
+                padding: 8px 16px;
+                border-radius: 4px;
+                cursor: pointer;
+                font-size: 12px;
+            `;
+            testBtn.onclick = () => this.testConnection();
+            document.body.appendChild(testBtn);
+        }
+    }
+    
+    async testConnection() {
+        console.log('🧪 Testing connection to Google Apps Script...');
+        this.showNotification('Testing connection...', 'info');
+        
+        try {
+            // Test with a simple action
+            const result = await this.apiCall('getPlayers', {});
+            console.log('🧪 Test result:', result);
+            
+            if (result && result.success !== undefined) {
+                this.showNotification('✅ Connection test successful!', 'success');
+            } else {
+                this.showNotification('❌ Connection test failed - invalid response', 'error');
+            }
+        } catch (error) {
+            console.error('🧪 Test failed:', error);
+            this.showNotification(`❌ Connection test failed: ${error.message}`, 'error');
+        }
     }
     
     bindEvents() {
@@ -578,16 +628,24 @@ class WingChallenge {
     
     async syncWithServer() {
         if (!this.isOnline || !CONFIG.WEB_APP_URL || CONFIG.WEB_APP_URL === 'YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE') {
+            console.log('⚠️ Skipping sync - not online or URL not configured');
             return;
         }
         
         try {
+            console.log('🔄 Starting sync with server...');
             const result = await this.apiCall('getPlayers');
-            if (result.success) {
+            console.log('🔄 Sync result:', result);
+            
+            if (result && result.success) {
+                console.log('✅ Sync successful, merging data');
                 this.mergeServerData(result.players);
+            } else {
+                console.error('❌ Sync failed:', result ? result.error : 'Unknown error');
             }
         } catch (error) {
-            console.error('Sync error:', error);
+            console.error('❌ Sync error:', error);
+            // Don't show notification for sync errors to avoid spam
         }
     }
     
@@ -641,7 +699,13 @@ class WingChallenge {
             console.log('🌐 Using JSONP fallback for cross-origin request');
             console.log('🔍 Debug - isLocalhost:', isLocalhost, 'isGitHubPages:', isGitHubPages);
             console.log('🔍 Debug - hostname:', window.location.hostname);
-            return this.jsonpCall(action, data);
+            
+            try {
+                return await this.jsonpCall(action, data);
+            } catch (jsonpError) {
+                console.error('❌ JSONP failed, trying direct fetch as fallback:', jsonpError);
+                // Fall through to try direct fetch as last resort
+            }
         }
         
         try {
@@ -677,54 +741,88 @@ class WingChallenge {
         }
     }
     
-    // JSONP fallback for localhost testing
+    // JSONP fallback for cross-origin requests
     jsonpCall(action, data) {
         return new Promise((resolve, reject) => {
-            console.log('📞 Using JSONP for localhost');
+            console.log('📞 Using JSONP for cross-origin request');
             
             // Create callback function name
-            const callbackName = 'jsonp_callback_' + Date.now();
+            const callbackName = 'jsonp_callback_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
             
             // Create URL with callback parameter
             const url = new URL(CONFIG.WEB_APP_URL);
             url.searchParams.append('action', action);
             url.searchParams.append('callback', callbackName);
             Object.keys(data).forEach(key => {
-                url.searchParams.append(key, data[key]);
+                if (data[key] !== undefined && data[key] !== null) {
+                    url.searchParams.append(key, data[key].toString());
+                }
             });
             
             console.log('📞 JSONP URL:', url.toString());
             
+            let timeoutId;
+            let script;
+            
+            // Cleanup function
+            const cleanup = () => {
+                if (timeoutId) {
+                    clearTimeout(timeoutId);
+                    timeoutId = null;
+                }
+                if (window[callbackName]) {
+                    delete window[callbackName];
+                }
+                if (script && script.parentNode) {
+                    script.parentNode.removeChild(script);
+                }
+            };
+            
             // Set up global callback
             window[callbackName] = function(result) {
-                console.log('📞 JSONP Response:', result);
-                delete window[callbackName];
-                document.head.removeChild(script);
-                resolve(result);
+                console.log('📞 JSONP Response received:', result);
+                console.log('📞 Response type:', typeof result);
+                console.log('📞 Response keys:', result ? Object.keys(result) : 'null/undefined');
+                
+                cleanup();
+                
+                // Validate response
+                if (result && typeof result === 'object' && (result.success !== undefined || result.error !== undefined)) {
+                    console.log('✅ Valid JSONP response, resolving');
+                    resolve(result);
+                } else {
+                    console.error('❌ Invalid JSONP response format:', result);
+                    console.error('❌ Expected object with success or error property');
+                    reject(new Error('Invalid response format from server'));
+                }
             };
             
             // Create script tag
-            const script = document.createElement('script');
+            script = document.createElement('script');
+            script.type = 'text/javascript';
+            script.async = true;
             script.src = url.toString();
-            script.onerror = function() {
-                console.error('❌ JSONP Error');
-                delete window[callbackName];
-                document.head.removeChild(script);
-                reject(new Error('JSONP request failed'));
+            
+            script.onerror = function(error) {
+                console.error('❌ JSONP Script Error:', error);
+                cleanup();
+                reject(new Error('JSONP script failed to load'));
+            };
+            
+            script.onload = function() {
+                console.log('📞 JSONP Script loaded successfully');
+                // Don't resolve here - wait for callback
             };
             
             // Add to page
             document.head.appendChild(script);
             
-            // Timeout after 10 seconds
-            setTimeout(() => {
-                if (window[callbackName]) {
-                    console.error('❌ JSONP Timeout');
-                    delete window[callbackName];
-                    document.head.removeChild(script);
-                    reject(new Error('JSONP request timeout'));
-                }
-            }, 10000);
+            // Timeout after 15 seconds (increased for better reliability)
+            timeoutId = setTimeout(() => {
+                console.error('❌ JSONP Timeout after 15 seconds');
+                cleanup();
+                reject(new Error('JSONP request timeout'));
+            }, 15000);
         });
     }
     
